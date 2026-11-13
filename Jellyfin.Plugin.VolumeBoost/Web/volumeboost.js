@@ -192,7 +192,7 @@
     }
 
     // ---------- shared ----------
-    function setBoost(value, showOsd) {
+    function setBoost(value) {
         var v = Math.round(Math.min(MAX, Math.max(100, value)) / STEP) * STEP;
         v = Math.min(MAX, Math.max(100, v));
         if (v === boost) { syncUi(); return; }
@@ -201,7 +201,6 @@
         applyWebAudio();
         applyMpv();
         syncUi();
-        if (showOsd) flash(boost);
     }
 
     // ---------- UI ----------
@@ -228,20 +227,12 @@
         '.volumeBoostPopup.boosting .volumeBoostPopupValue{color:var(--jf-palette-primary-main,#00a4dc)}',
         '.volumeBoostPopup .sliderContainer{width:100%}',
         '.volumeBoostPopup input[type=range]:not(.mdl-slider){width:100%;accent-color:var(--jf-palette-primary-main,#00a4dc)}',
-        '.volumeBoostPopupFooter{display:flex;align-items:center;justify-content:space-between;margin-top:0.45em;',
+        '.volumeBoostPopupFooter{display:flex;align-items:center;justify-content:flex-end;margin-top:0.45em;',
         'font-size:0.75em;color:var(--jf-palette-text-secondary,rgba(255,255,255,0.7))}',
         '.volumeBoostReset{background:none;border:0;padding:0.2em 0.4em;margin:-0.2em -0.4em;border-radius:0.2em;',
         'font:inherit;color:var(--jf-palette-primary-main,#00a4dc);cursor:pointer}',
         '.volumeBoostReset:hover{background:var(--jf-palette-action-hover,rgba(255,255,255,0.08))}',
-        '.volumeBoostReset:disabled{color:inherit;opacity:0.5;cursor:default;background:none}',
-
-        // Keyboard-shortcut indicator, styled like Jellyfin's toast.
-        '#volumeBoostOsd{position:fixed;top:12%;left:50%;transform:translateX(-50%);z-index:100001;',
-        'display:flex;align-items:center;gap:0.5em;padding:0.6em 1.1em;border-radius:0.25em;',
-        'background:var(--jf-palette-background-paper,#202020);color:var(--jf-palette-text-primary,#fff);',
-        'box-shadow:0 0.3em 1.2em rgba(0,0,0,0.55);font-variant-numeric:tabular-nums;',
-        'pointer-events:none;opacity:0;transition:opacity 0.2s}',
-        '#volumeBoostOsd.show{opacity:1}'
+        '.volumeBoostReset:disabled{color:inherit;opacity:0.5;cursor:default;background:none}'
     ].join('');
     document.head.appendChild(style);
 
@@ -262,7 +253,6 @@
             '<input is="emby-slider" type="range" step="' + STEP + '" min="100" max="' + MAX + '" value="' + boost + '" class="volumeBoostSlider" aria-label="Volume boost" />' +
         '</div>' +
         '<div class="volumeBoostPopupFooter">' +
-            '<span>Shift + ↑ / ↓</span>' +
             '<button type="button" class="volumeBoostReset">Reset to 100%</button>' +
         '</div>';
     document.body.appendChild(popup);
@@ -382,7 +372,7 @@
 
     function updateButton(btn) {
         btn.classList.toggle('boosting', boost > 100);
-        btn.title = 'Volume boost: ' + boost + '% (Shift + ↑ / ↓)';
+        btn.title = 'Volume boost: ' + boost + '%';
     }
 
     function syncUi() {
@@ -414,45 +404,6 @@
         requestAnimationFrame(function () { pending = false; injectButtons(); });
     }).observe(document.documentElement, { childList: true, subtree: true });
     injectButtons();
-
-    // ---------- keyboard: Shift+Up / Shift+Down ----------
-    // Something is playing if there's an HTML media element (web player) or, in the desktop app,
-    // the player's volume controls are on screen.
-    function isPlayerVisible() {
-        if (document.querySelector('video, audio')) return true;
-        if (!desktopPlayer) return false;
-        var anchors = document.querySelectorAll(ANCHORS);
-        for (var i = 0; i < anchors.length; i++) {
-            if (anchors[i].offsetParent !== null) return true;
-        }
-        return false;
-    }
-
-    document.addEventListener('keydown', function (e) {
-        if (!e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) return;
-        if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
-        var t = e.target;
-        if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
-        if (!isPlayerVisible()) return;
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        setBoost(boost + (e.key === 'ArrowUp' ? STEP : -STEP), true);
-    }, true);
-
-    // ---------- on-screen indicator for the keyboard shortcut ----------
-    var osd = null, osdTimer = null;
-    function flash(value) {
-        if (!osd) {
-            osd = document.createElement('div');
-            osd.id = 'volumeBoostOsd';
-            osd.innerHTML = '<span class="material-icons ' + ICON + '" aria-hidden="true"></span><span></span>';
-            document.body.appendChild(osd);
-        }
-        osd.lastChild.textContent = 'Volume boost ' + value + '%';
-        osd.classList.add('show');
-        clearTimeout(osdTimer);
-        osdTimer = setTimeout(function () { osd.classList.remove('show'); }, 1200);
-    }
 
     syncUi();
     detectDesktop();

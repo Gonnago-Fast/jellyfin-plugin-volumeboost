@@ -11,7 +11,6 @@ extension. Targets **Jellyfin 12.x** (.NET 10).
   level and a *Reset to 100%* button. On touch screens or with a remote, click/tap the button instead;
   the popup then stays open until you tap it again or elsewhere.
 - While boost is above 100%, the icon turns Jellyfin blue.
-- **Shift + ↑ / ↓** changes the boost while something is playing, with a short on-screen indicator.
 - The boost level is remembered per browser / per app.
 - Max boost and step size can be changed in *Dashboard → Plugins → Volume Boost*.
 

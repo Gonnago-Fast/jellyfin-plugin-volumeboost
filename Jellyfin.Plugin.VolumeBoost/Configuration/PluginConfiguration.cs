@@ -13,7 +13,7 @@ public class PluginConfiguration : BasePluginConfiguration
     public int MaxBoostPercent { get; set; } = 300;
 
     /// <summary>
-    /// Gets or sets the slider / keyboard step in percent.
+    /// Gets or sets the slider step in percent.
     /// </summary>
     public int StepPercent { get; set; } = 10;
 }
