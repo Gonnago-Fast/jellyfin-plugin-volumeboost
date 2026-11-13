@@ -11,7 +11,7 @@ browser "volume booster" extensions do: the `<video>`/`<audio>` element is route
 
 Targets **Jellyfin 10.11.x** (net9.0).
 
-## How it hooks into the web client (like Intro Skipper)
+## How it hooks into the web client
 
 1. **File Transformation plugin installed (recommended):** Volume Boost registers an `index.html`
    transformation, and the script tag is added in memory each time the page is served. Nothing on
@@ -22,7 +22,7 @@ Targets **Jellyfin 10.11.x** (net9.0).
 
 The script itself is served by the plugin at `/VolumeBoost/script.js`.
 
-## Install from a plugin repository (like Intro Skipper)
+## Install from a plugin repository
 
 1. Push this folder to a GitHub repo (branch `main`).
 2. Tag a release: `git tag v1.0.0.0 && git push origin v1.0.0.0`.

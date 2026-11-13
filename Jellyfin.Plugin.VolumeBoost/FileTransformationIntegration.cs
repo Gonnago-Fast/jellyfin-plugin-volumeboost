@@ -7,8 +7,8 @@ namespace Jellyfin.Plugin.VolumeBoost;
 
 /// <summary>
 /// Integration with IAmParadox27's "File Transformation" plugin
-/// (https://github.com/IAmParadox27/jellyfin-plugin-file-transformation), which Intro Skipper,
-/// JavaScript Injector, Home Screen Sections etc. also use to modify jellyfin-web without touching disk.
+/// (https://github.com/IAmParadox27/jellyfin-plugin-file-transformation), which lets plugins modify
+/// jellyfin-web as it is served, without touching files on disk.
 ///
 /// Jellyfin loads each plugin in its own AssemblyLoadContext, so everything is done via reflection and
 /// we deliberately don't reference Newtonsoft.Json (its JObject type would differ between load contexts).

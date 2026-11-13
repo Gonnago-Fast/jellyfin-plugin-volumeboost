@@ -20,7 +20,7 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
 }
 
 /// <summary>
-/// Gets the boost script into jellyfin-web, the same way Intro Skipper does:
+/// Gets the boost script into jellyfin-web:
 /// 1. Preferred: via the File Transformation plugin (in-memory, index.html on disk untouched).
 /// 2. Fallback: write a &lt;script&gt; tag into index.html on disk.
 /// </summary>
