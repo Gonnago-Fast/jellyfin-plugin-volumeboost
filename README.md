@@ -1,8 +1,13 @@
 # Jellyfin Volume Boost
 
-A Jellyfin server plugin that lets the **web client** play audio louder than 100%, the same way
-browser "volume booster" extensions do: the `<video>`/`<audio>` element is routed through a Web Audio
-`GainNode` (plus a limiter so boosted peaks don't hard-clip).
+A Jellyfin server plugin that lets Jellyfin play audio louder than 100%.
+
+| Client | How the boost works |
+| --- | --- |
+| Browsers, Android app (web player) | The `<video>`/`<audio>` element is routed through a Web Audio `GainNode`, like browser "volume booster" extensions |
+| **Jellyfin Desktop / Jellyfin Media Player** (Windows, macOS, Linux) | These play in mpv, not in the page, so the script adds an mpv audio filter (`lavfi volume` + `alimiter`) through the app's built-in `window.api.player.userCommand` bridge |
+
+Both paths use a limiter, so boosted peaks don't hard-clip.
 
 - Boost slider next to the volume slider in the video player and the audio now-playing bar
 - **Shift + ↑ / ↓** changes the boost, double-click the slider resets to 100%
@@ -54,8 +59,12 @@ Look for `VolumeBoost:` lines in the server log. You should see either
 
 ## Limitations
 
-- Only affects clients that play through jellyfin-web (browsers, web-based TV apps). Native players
-  (Android/iOS apps, Jellyfin Media Player / Desktop, Kodi, Swiftfin) aren't affected.
-- Once an element has been boosted, it stays routed through Web Audio until the page reloads. At 100%
-  this makes no audible difference.
+- Works in clients that show jellyfin-web: browsers, the Android app with *Video player type: Web player*,
+  and Jellyfin Desktop / Jellyfin Media Player. Native players (Android *Integrated player*, Android TV,
+  Swiftfin, Findroid, Kodi) aren't affected.
+- Desktop app: the boost can't apply while **audio passthrough** (bitstreaming AC3/DTS to a receiver) is
+  active, because mpv doesn't decode that audio. Changing the boost during playback may cause a tiny
+  audio dropout while mpv rebuilds its filter chain.
+- Browser: once an element has been boosted, it stays routed through Web Audio until the page reloads. At
+  100% this makes no audible difference.
 - The boost stacks on top of Jellyfin's own volume: 100% Jellyfin × 300% boost = 3×.

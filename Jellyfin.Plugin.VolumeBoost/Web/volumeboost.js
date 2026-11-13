@@ -1,7 +1,9 @@
 /*
  * Jellyfin Volume Boost
- * Lets the Jellyfin web client play audio louder than 100% using the Web Audio API
- * (same technique as browser "volume booster" extensions).
+ * Lets Jellyfin play audio louder than 100%:
+ *  - in browsers / web-player apps: via the Web Audio API (like browser "volume booster" extensions)
+ *  - in the Jellyfin Desktop / Jellyfin Media Player apps: via an mpv audio filter, because those
+ *    apps play media in mpv instead of an HTML <video> element.
  *
  * Works as part of the Jellyfin.Plugin.VolumeBoost server plugin, or standalone
  * (e.g. pasted into the "JavaScript Injector" plugin, or as a userscript).
@@ -21,6 +23,56 @@
     var ctx = null;
     var graphs = []; // { el, gain }
     var boost = load();
+
+    // ---------- desktop app (mpv) ----------
+    // Jellyfin Desktop and Jellyfin Media Player expose window.api.player, whose userCommand()
+    // runs an mpv command. We add a labelled lavfi filter, so the boost stacks on top of
+    // Jellyfin's own volume and isn't limited by mpv's volume-max (130% by default).
+    var MPV_LABEL = '@volboost';
+    var desktopPlayer = null;
+    var lastMpvGain = null;
+
+    function findDesktopPlayer() {
+        var p = window.api && window.api.player;
+        return p && typeof p.userCommand === 'function' ? p : null;
+    }
+
+    function applyMpv(force) {
+        if (!desktopPlayer) return;
+        var g = boost / 100;
+        if (!force && g === lastMpvGain) return;
+        lastMpvGain = g;
+        try {
+            desktopPlayer.userCommand('af remove ' + MPV_LABEL);
+            if (g > 1) {
+                // volume = gain, alimiter = keep boosted peaks from hard-clipping (no auto-leveling).
+                desktopPlayer.userCommand('af add ' + MPV_LABEL + ':lavfi=[volume=' + g.toFixed(3) +
+                    ',alimiter=limit=0.97:level=0]');
+            }
+        } catch (e) {
+            console.warn('[VolumeBoost] mpv command failed', e);
+        }
+    }
+
+    function onDesktopFound(p) {
+        if (desktopPlayer || !p) return;
+        desktopPlayer = p;
+        console.info('[VolumeBoost] desktop app detected, boosting through mpv');
+        applyMpv(true);
+    }
+
+    function detectDesktop() {
+        if (window.apiPromise && typeof window.apiPromise.then === 'function') {
+            window.apiPromise.then(function () { onDesktopFound(findDesktopPlayer()); }, function () {});
+        }
+        // window.api is set up asynchronously over Qt WebChannel, so poll for a while too.
+        var tries = 0;
+        (function poll() {
+            var p = findDesktopPlayer();
+            if (p) { onDesktopFound(p); return; }
+            if (++tries < 120) setTimeout(poll, 500);
+        })();
+    }
 
     // ---------- persistence ----------
     function load() {
@@ -111,6 +163,7 @@
         boost = v;
         save();
         applyGain();
+        applyMpv(false);
         syncControls();
         if (showOsd) flash('Volume boost: ' + boost + '%');
     }
@@ -209,11 +262,25 @@
         if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
         var t = e.target;
         if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
-        if (!document.querySelector('video, audio')) return;
+        if (!isPlayerVisible()) return;
         e.preventDefault();
         e.stopImmediatePropagation();
         setBoost(boost + (e.key === 'ArrowUp' ? STEP : -STEP), true);
     }, true);
+
+    // Something is playing if there's an HTML media element (web player) or, in the desktop app,
+    // the player's volume controls are on screen.
+    function isPlayerVisible() {
+        if (document.querySelector('video, audio')) return true;
+        if (!desktopPlayer) return false;
+        var anchors = document.querySelectorAll(ANCHORS);
+        for (var i = 0; i < anchors.length; i++) {
+            if (anchors[i].offsetParent !== null) return true;
+        }
+        return false;
+    }
+
+    detectDesktop();
 
     // ---------- small on-screen indicator ----------
     var osd = null, osdTimer = null;
