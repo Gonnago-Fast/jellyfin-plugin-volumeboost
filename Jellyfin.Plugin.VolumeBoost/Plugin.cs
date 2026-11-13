@@ -51,7 +51,7 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     /// </summary>
     public override void OnUninstalling()
     {
-        ScriptInjector.RemoveFromIndex(_appPaths, null);
+        HtmlInjector.CleanIndexOnDisk(_appPaths, null);
         base.OnUninstalling();
     }
 }

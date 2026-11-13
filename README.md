@@ -14,34 +14,28 @@ Both paths use a limiter, so boosted peaks don't hard-clip.
 - Boost level is remembered per browser
 - Max boost and step size configurable in *Dashboard → Plugins → Volume Boost*
 
-Targets **Jellyfin 10.11.x** (net9.0).
+Targets **Jellyfin 12.x** (.NET 10).
 
 ## How it hooks into the web client
 
-1. **File Transformation plugin installed (recommended):** Volume Boost registers an `index.html`
-   transformation, and the script tag is added in memory each time the page is served. Nothing on
-   disk changes, and Jellyfin upgrades don't break it.
-2. **Otherwise:** it adds a `<script>` tag to jellyfin-web's `index.html` on disk at startup
-   (between `<!-- VolumeBoost:start/end -->` markers, removed on uninstall). Jellyfin needs write
-   access to that file.
-
-The script itself is served by the plugin at `/VolumeBoost/script.js`.
+The plugin adds a small ASP.NET Core middleware to Jellyfin's request pipeline that inserts one
+`<script>` tag into `/web/index.html` **in memory** as the page is served. Nothing on disk is changed,
+so it works with read-only web folders (e.g. the official Docker image), survives Jellyfin upgrades,
+and needs no other plugin. The script itself is served by the plugin at `/VolumeBoost/script.js`.
 
 ## Install from a plugin repository
 
 1. Push this folder to a GitHub repo (branch `main`).
-2. Tag a release: `git tag v1.0.0.0 && git push origin v1.0.0.0`.
-   The *Release* workflow builds the DLL, publishes `volumeboost_1.0.0.0.zip` as a GitHub release,
-   and adds that version to `manifest.json` on `main`.
+2. Publish a release: on GitHub open **Actions → Release → Run workflow**, enter a 4-part version
+   (e.g. `1.0.1.0`) and run it. (Pushing a tag like `v1.0.1.0` works too.) The workflow builds the DLL,
+   publishes `volumeboost_<version>.zip` as a GitHub release and adds that version to `manifest.json`.
 3. In Jellyfin: **Dashboard → Plugins → Repositories → +**
    - Name: `Volume Boost`
    - URL: `https://raw.githubusercontent.com/<owner>/<repo>/main/manifest.json`
 4. **Catalog → Volume Boost → Install**, then restart Jellyfin.
-5. Recommended: also install **File Transformation** (add the repository URL listed in
-   github.com/IAmParadox27/jellyfin-plugin-file-transformation's README), then restart again.
-6. Hard-reload the web page (Ctrl+F5).
+5. Hard-reload the web page (Ctrl+F5).
 
-Future updates: push a new tag (`v1.0.1.0`, …) and Jellyfin will offer the update.
+Future updates: run the Release workflow again with a higher version and Jellyfin will offer the update.
 
 ## Manual install
 
@@ -54,8 +48,9 @@ Copy `out/Jellyfin.Plugin.VolumeBoost.dll` into `<config>/plugins/VolumeBoost_1.
 
 ## Troubleshooting
 
-Look for `VolumeBoost:` lines in the server log. You should see either
-`registered with File Transformation` or `injected script into …/index.html`.
+Look for `VolumeBoost:` lines in the server log. On startup you should see
+`VolumeBoost: adding the script tag to /web/index.html in memory as it is served.`
+Open `https://<your-server>/web/index.html` and search the page source for `VolumeBoost` to confirm.
 
 ## Limitations
 
