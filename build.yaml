@@ -1,0 +1,16 @@
+---
+name: "Volume Boost"
+guid: "d4c61c6f-f9ae-4a3c-872b-79a9b3da3518"
+version: "1.0.0.0"
+targetAbi: "10.11.0.0"
+framework: "net9.0"
+overview: "Play audio above 100% volume in the Jellyfin web client."
+description: >
+  Adds a boost slider (100%–300% by default) next to the volume control in the
+  Jellyfin web player and now-playing bar, using the Web Audio API with a limiter.
+category: "General"
+owner: "jakob"
+artifacts:
+- "Jellyfin.Plugin.VolumeBoost.dll"
+changelog: >
+  1.0.0.0 - Initial release.

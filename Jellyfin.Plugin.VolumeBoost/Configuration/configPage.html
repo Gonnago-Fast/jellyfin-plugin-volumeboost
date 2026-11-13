@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Volume Boost</title>
+</head>
+<body>
+    <div id="VolumeBoostConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button">
+        <div data-role="content">
+            <div class="content-primary">
+                <h2 class="sectionTitle">Volume Boost</h2>
+                <p>Adds a boost slider next to the volume control in the web player.
+                   Keyboard: <b>Shift + ↑ / ↓</b>. Double-click the slider to reset to 100%.</p>
+                <form id="VolumeBoostConfigForm">
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="MaxBoostPercent">Maximum boost (%)</label>
+                        <input id="MaxBoostPercent" name="MaxBoostPercent" type="number" is="emby-input" min="100" max="1000" step="10" />
+                        <div class="fieldDescription">100 = no boost, 300 = up to 3× as loud. Values above ~400% will mostly just push into the limiter.</div>
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="StepPercent">Step (%)</label>
+                        <input id="StepPercent" name="StepPercent" type="number" is="emby-input" min="1" max="100" />
+                        <div class="fieldDescription">Slider and keyboard step size.</div>
+                    </div>
+                    <p class="fieldDescription">After saving, reload the Jellyfin web page in your browser for changes to apply.</p>
+                    <div>
+                        <button is="emby-button" type="submit" class="raised button-submit block emby-button">
+                            <span>Save</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <script type="text/javascript">
+            var VolumeBoostConfig = { pluginUniqueId: 'd4c61c6f-f9ae-4a3c-872b-79a9b3da3518' };
+
+            document.querySelector('#VolumeBoostConfigPage').addEventListener('pageshow', function () {
+                Dashboard.showLoadingMsg();
+                ApiClient.getPluginConfiguration(VolumeBoostConfig.pluginUniqueId).then(function (config) {
+                    document.querySelector('#MaxBoostPercent').value = config.MaxBoostPercent;
+                    document.querySelector('#StepPercent').value = config.StepPercent;
+                    Dashboard.hideLoadingMsg();
+                });
+            });
+
+            document.querySelector('#VolumeBoostConfigForm').addEventListener('submit', function (e) {
+                Dashboard.showLoadingMsg();
+                ApiClient.getPluginConfiguration(VolumeBoostConfig.pluginUniqueId).then(function (config) {
+                    config.MaxBoostPercent = parseInt(document.querySelector('#MaxBoostPercent').value, 10) || 300;
+                    config.StepPercent = parseInt(document.querySelector('#StepPercent').value, 10) || 10;
+                    ApiClient.updatePluginConfiguration(VolumeBoostConfig.pluginUniqueId, config).then(function (result) {
+                        Dashboard.processPluginConfigurationUpdateResult(result);
+                    });
+                });
+                e.preventDefault();
+                return false;
+            });
+        </script>
+    </div>
+</body>
+</html>
